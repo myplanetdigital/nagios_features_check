@@ -1,0 +1,123 @@
+<?php
+
+/**
+ * Functions to be performed by the Nagios Features Check module.
+ */
+function nagios_features_check_functions() {
+  return array(
+    'features_check' => t('Check whether features are clean (ie. state is not "Overridden" or "Needs review")'),
+  );
+}
+
+/**
+ * Nagios support, see http://drupal.org/project/nagios
+ */
+
+/**
+ * Implementation of hook_nagios_info()
+ */
+function nagios_features_check_nagios_info() {
+  return array(
+    'name'   => 'Nagios Features Check',
+    'id'     => 'FEATURES_CHK',
+  );
+}
+
+/**
+ * Implements hook_nagios_settings().
+ */
+function nagios_features_check_nagios_settings() {
+  foreach (nagios_features_check_functions() as $function => $description) {
+    $var = 'nagios_func_' . $function;
+    $form[$var] = array(
+      '#type' => 'checkbox',
+      '#title' => $function,
+      '#default_value' => variable_get($var, TRUE),
+      '#description' => $description,
+    );
+  }
+
+  return $form;
+}
+
+/**
+ * Implements hook_nagios().
+ */
+function nagios_features_check_nagios() {
+  $status = array();
+  foreach (nagios_functions() as $function => $description) {
+    if (variable_get('nagios_func_' . $function, TRUE)) {
+      $func = 'nagios_check_' . $function;
+      $result = $func();
+      $status[$result['key']] = $result['data'];
+    }
+  }
+
+  return $status;
+}
+
+/**
+ * Check how many features are overridden or needing review..
+ *
+ * @return Array
+ */
+function nagios_check_features_check() {
+  $all_clean = true;
+
+  module_load_include('inc', 'features', 'features.export');
+  $features = features_get_features(NULL, TRUE);
+
+  # Not clean if certain storage types detected.
+  foreach ($features as $k => $m) {
+    switch (features_get_storage($m->name)) {
+      case FEATURES_OVERRIDDEN:
+      case FEATURES_NEEDS_REVIEW:
+        $all_clean = false;
+        break;
+    }
+  }
+
+  if ($all_clean) {
+    $data = array(
+      'status' => NAGIOS_STATUS_OK,
+      'type' => 'state',
+      'text' => '',
+    );
+  } else {
+    $data = array(
+      'status' => NAGIOS_STATUS_CRITICAL,
+      'type' => 'state',
+      'text' => t('Features not clean.'),
+    );
+  }
+
+  return array(
+    'key' => 'FEATURES_CHK',
+    'data' => $data,
+  );
+}
+
+/**
+ * Helper function that tells boolean whether features are clean.
+ */
+function _nagios_features_check_features_clean() {
+}
+
+/**
+ * Implements hook_nagios_checks().
+ */
+function nagios_features_check_nagios_checks() {
+  return nagios_features_check_functions();
+}
+
+/**
+ * Implements hook_nagios_check().
+ */
+function nagios_features_check_nagios_check($function) {
+  // We don't bother to check if the function has been enabled by the user.
+  // Since this runs via drush, web security is not an issue.
+  $func = 'nagios_check_' . $function;
+  $result = $func();
+  $status[$result['key']] = $result['data'];
+  return $status;
+}

@@ -1,0 +1,6 @@
+name = Nagios Features Check
+description = Extends Nagios module to report on overridden features.
+core = 7.x
+package = Monitoring
+dependencies[] = features
+dependencies[] = nagios
