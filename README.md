@@ -19,3 +19,7 @@ You may run a quick check like so:
 <!-- Links -->
    [features]: https://drupal.org/project/features
    [nagios]:   https://drupal.org/project/nagios
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/myplanetdigital/nagios_features_check/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
